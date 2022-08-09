@@ -1,0 +1,37 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Deployment
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+    - uses: pnpm/action-setup@v2.2.2
+      with:
+        version: latest
+        run_install: true
+    - name: Use Node.js 16
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+        cache: 'pnpm'
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-2
+    - name: Init Terraform
+      run: terraform -chdir=_terraform init
+    - run: terraform -chdir=_terraform apply -auto-approve -input=false
+    - run: pnpm webpack --mode=production
+    - run: aws s3 sync dist/ s3://$(terraform -chdir=_terraform output -raw bucket)/
