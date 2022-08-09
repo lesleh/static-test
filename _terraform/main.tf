@@ -10,7 +10,7 @@ terraform {
 
   backend "s3" {
     bucket = "leslehcouk-terraform-states"
-    key    = "test2.lesleh.co.uk"
+    key    = "static-test.lesleh.co.uk"
     region = "eu-west-2"
   }
 }
